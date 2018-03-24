@@ -3,18 +3,13 @@ package skadistats.clarity.analyzer.main;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.Transition;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
-import javafx.beans.binding.ObjectBinding;
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
@@ -29,9 +24,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
@@ -41,9 +33,8 @@ import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import skadistats.clarity.analyzer.Main;
+import skadistats.clarity.analyzer.replay.FXEntities;
 import skadistats.clarity.analyzer.replay.ObservableEntity;
-import skadistats.clarity.analyzer.replay.ObservableEntityList;
-import skadistats.clarity.analyzer.replay.ObservableEntityProperty;
 import skadistats.clarity.analyzer.replay.ReplayController;
 
 import java.io.File;
@@ -72,10 +63,10 @@ public class MainPresenter implements Initializable {
     public Label labelLastTick;
 
     @FXML
-    public TableView<ObservableEntity> entityTable;
+    public TableView<FXEntities.FxEntity> entityTable;
 
     @FXML
-    public TableView<ObservableEntityProperty> detailTable;
+    public TableView<FXEntities.FxEntity.FxProperty> detailTable;
 
     @FXML
     public TextField entityNameFilter;
@@ -121,26 +112,26 @@ public class MainPresenter implements Initializable {
         labelTick.textProperty().bind(replayController.tickProperty().asString());
         labelLastTick.textProperty().bind(replayController.lastTickProperty().asString());
 
-        TableColumn<ObservableEntity, String> entityTableIdColumn = (TableColumn<ObservableEntity, String>) entityTable.getColumns().get(0);
+        TableColumn<FXEntities.FxEntity, String> entityTableIdColumn = (TableColumn<FXEntities.FxEntity, String>) entityTable.getColumns().get(0);
         entityTableIdColumn.setCellValueFactory(param -> param.getValue() != null ? param.getValue().indexProperty() : new ReadOnlyStringWrapper(""));
-        TableColumn<ObservableEntity, String> entityTableNameColumn = (TableColumn<ObservableEntity, String>) entityTable.getColumns().get(1);
+        TableColumn<FXEntities.FxEntity, String> entityTableNameColumn = (TableColumn<FXEntities.FxEntity, String>) entityTable.getColumns().get(1);
         entityTableNameColumn.setCellValueFactory(param -> param.getValue() != null ? param.getValue().nameProperty() : new ReadOnlyStringWrapper(""));
         entityTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             log.info("entity table selection from {} to {}", oldValue, newValue);
-            detailTable.setItems(newValue);
+            detailTable.setItems(newValue.getFxProperties());
         });
 
-        TableColumn<ObservableEntityProperty, String> idColumn =
-            (TableColumn<ObservableEntityProperty, String>) detailTable.getColumns().get(0);
+        TableColumn<FXEntities.FxEntity.FxProperty, String> idColumn =
+            (TableColumn<FXEntities.FxEntity.FxProperty, String>) detailTable.getColumns().get(0);
         idColumn.setCellValueFactory(param -> param.getValue().indexProperty());
-        TableColumn<ObservableEntityProperty, String> nameColumn =
-            (TableColumn<ObservableEntityProperty, String>) detailTable.getColumns().get(1);
+        TableColumn<FXEntities.FxEntity.FxProperty, String> nameColumn =
+            (TableColumn<FXEntities.FxEntity.FxProperty, String>) detailTable.getColumns().get(1);
         nameColumn.setCellValueFactory(param -> param.getValue().nameProperty());
-        TableColumn<ObservableEntityProperty, String> valueColumn =
-            (TableColumn<ObservableEntityProperty, String>) detailTable.getColumns().get(2);
+        TableColumn<FXEntities.FxEntity.FxProperty, String> valueColumn =
+            (TableColumn<FXEntities.FxEntity.FxProperty, String>) detailTable.getColumns().get(2);
         valueColumn.setCellValueFactory(param -> param.getValue().valueProperty());
 
-        valueColumn.setCellFactory(v -> new TableCell<ObservableEntityProperty, String>() {
+        valueColumn.setCellFactory(v -> new TableCell<FXEntities.FxEntity.FxProperty, String>() {
             final Animation animation = new Transition() {
                 {
                     setCycleDuration(Duration.millis(500));
@@ -161,11 +152,11 @@ public class MainPresenter implements Initializable {
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(item);
-                ObservableEntityProperty oep = (ObservableEntityProperty) getTableRow().getItem();
-                if (oep != null) {
-                    animation.stop();
-                    animation.playFrom(Duration.millis(System.currentTimeMillis() - oep.getLastChangedAt()));
-                }
+//                FXEntities.FxEntity.FxProperty oep = (FXEntities.FxEntity.FxProperty) getTableRow().getItem();
+//                if (oep != null) {
+//                    animation.stop();
+//                    animation.playFrom(Duration.millis(System.currentTimeMillis() - oep.getLastChangedAt()));
+//                }
             }
         });
 
@@ -238,10 +229,10 @@ public class MainPresenter implements Initializable {
         }
         preferences.put("fileChooserPath", f.getParent());
         try {
-            ObservableEntityList entityList = replayController.load(f);
-            mapControl.setEntities(entityList);
-            filteredEntityList = entityList.filtered(filterFunc);
-            entityTable.setItems(filteredEntityList);
+            FXEntities entityList = replayController.load(f);
+            //mapControl.setEntities(entityList.getFxEntities());
+            //filteredEntityList = entityList.filtered(filterFunc);
+            entityTable.setItems(entityList.getFxEntities());
 
         } catch (Exception e) {
             Dialogs.create().title("Error loading replay").showException(e);

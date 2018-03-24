@@ -99,10 +99,10 @@ public class ReplayController {
         }
     }
 
-    public ObservableEntityList load(File f) throws IOException {
+    public FXEntities load(File f) throws IOException {
         haltIfRunning();
         PropertySupportRunner r = new PropertySupportRunner(new LiveSource(f.getAbsoluteFile().toString(), 10, TimeUnit.SECONDS));
-        ObservableEntityList observableEntities = new ObservableEntityList(r.getEngineType());
+        FXEntities observableEntities = new FXEntities(r.getEngineType());
         runner.setValue(r);
         r.runWith(this, observableEntities);
         return observableEntities;
